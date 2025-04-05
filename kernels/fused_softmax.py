@@ -121,7 +121,7 @@ def test_softmax_kernel(size: tuple, atol=1e-3, rtol=1e-3, device = DEVICE):
 @triton.testing.perf_report(
     triton.testing.Benchmark(
         x_names=['N'],
-        x_vals=[128 * i for i in range(2, 50)],
+        x_vals=[128 * i for i in range(2, 100)],
         line_arg = 'provider',
         line_vals= ['triton', 'torch', 'naive'],
         line_names= ['Triton', 'Torch', 'Naive Kernel'],
@@ -156,4 +156,4 @@ if __name__ == "__main__":
 
     import sys
     if len(sys.argv) > 1 and sys.argv[1] == "--benchmark":
-        benchmark.run(save_path="../benchmark_results", print_data=False)
+        benchmark.run(save_path="./benchmark_results", print_data=False)

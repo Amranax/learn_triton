@@ -104,4 +104,4 @@ if __name__ == "__main__":
 
     import sys
     if len(sys.argv) > 1 and sys.argv[1] == "--benchmark":
-        benchmark.run(save_path='../benchmark_results', print_data=True)
+        benchmark.run(save_path='./benchmark_results', print_data=True)
