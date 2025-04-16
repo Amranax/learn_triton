@@ -32,7 +32,7 @@ def _attn_fwd_inner(
       lo = block_index_QO * BLOCK_SIZE_QO
       hi = (block_index_QO + 1) * BLOCK_SIZE_QO
    else:
-      lo,hi = 0, BLOCK_SIZE_QO*BLOCK_SIZE_QO
+      lo,hi = 0, block_index_QO*BLOCK_SIZE_QO
 
    # Compiler may optimize based on this
    lo = tl.multiple_of(lo, BLOCK_SIZE_QO)
@@ -72,9 +72,6 @@ def _attn_fwd_inner(
    
    return O, L, M
       
-
-
-
 @triton.autotune(
    [
       triton.Config(
@@ -196,7 +193,7 @@ class _flashattention(torch.autograd.Function):
    @staticmethod
    def forward(ctx, q, k, v, scale):
       assert q.shape == k.shape == v.shape
-      assert q.shape[-1] in [32, 64, 128], \
+      assert q.shape[-1] <= 128, \
             f'flash attention only supports head dimension of 128 less but got {q.shape[-1]}'
          # the kernel acutally isnt limited but large will overwhelm SRAM 
       assert q.device == k.device and q.device == v.device
@@ -220,7 +217,7 @@ class _flashattention(torch.autograd.Function):
          v.stride(0),     v.stride(1),   v.stride(2),   v.stride(3),
          O.stride(0),     O.stride(1),   O.stride(2),   O.stride(3),
          LSE.stride(0), LSE.stride(1), LSE.stride(2),
-         B, H, N, Dh,
+         B, N, H, Dh,
       )
 
       ctx.save_for_backward(q, k, v, O, LSE)
@@ -292,10 +289,10 @@ def bench_flash_attention(SEQ_LEN, mode, provider, device=DEVICE):
 if __name__ == "__main__":
    torch.set_default_device('cuda')
    
-   # test_flashattention_kernel(1, 1, 128, 32) # without block_masking
-   # test_flashattention_kernel(1, 1, 128, 64) # without block_masking
-   # test_flashattention_kernel(1, 1, 128, 128) # without block_masking
-   # test_flashattention_kernel(32, 8, 69, 127) # with block_masking
+   test_flashattention_kernel(1, 1, 128, 32) # without block_masking
+   test_flashattention_kernel(1, 1, 128, 64) # without block_masking
+   test_flashattention_kernel(1, 1, 128, 128) # without block_masking
+   test_flashattention_kernel(32, 8, 69, 128) # with block_masking
 
    import sys
    if len(sys.argv) > 1 and sys.argv[1] == "--benchmark":
